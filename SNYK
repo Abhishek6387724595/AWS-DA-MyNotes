@@ -1,0 +1,16 @@
+OleDbCommand comm = new OleDbCommand("SELECT * FROM YourTable WHERE SomeColumn = ?", con);
+comm.Parameters.AddWithValue("@p1", userInputValue); // Replace with actual parameter
+
+comm.CommandTimeout = timeOut;
+
+da = new OleDbDataAdapter(comm);
+da.Fill(ds);
+DataTable dt = ds.Tables[0];
+
+
+
+you're dynamically building a SQL string, you must refactor it to avoid concatenation of user input
+
+string selectQuery = "SELECT * FROM Users WHERE username = ?";
+OleDbCommand comm = new OleDbCommand(selectQuery, con);
+comm.Parameters.AddWithValue("@p1", username);
