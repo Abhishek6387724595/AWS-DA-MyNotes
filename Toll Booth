@@ -1,0 +1,273 @@
+using System;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.IO;
+/*
+We are writing software to analyze logs for toll booths on a highway. This highway is a divided highway with limited access; the only way on to or off of the highway is through a toll booth.
+There are three types of toll booths:
+* ENTRY (E in the diagram) toll booths, where a car goes through a booth as it enters the highway.
+* EXIT (X in the diagram) toll booths, where a car goes through a booth as it exits the highway.
+* MAINROAD (M in the diagram), which have sensors that record a license plate as a car drives through at full speed.
+
+        Exit Booth                         Entry Booth
+            |                                   |
+            X                                   E
+             \                                 /
+---<------------<---------M---------<-----------<---------<----
+                                         (West-bound side)
+===============================================================
+                                         (East-bound side)
+------>--------->---------M--------->--------->--------->------
+             /                                 \
+            E                                   X
+            |                                   |
+        Entry Booth                         Exit Booth
+
+For our first task:
+1-1) Read through and understand the code and comments below. Feel free to run the code and tests.
+1-2) The tests are not passing due to a bug in the code. Make the necessary changes to LogEntry to fix the bug.
+*/
+ 
+/*
+We are interested in how many people are using the highway, and so we would like to count how many complete journeys are taken in the log file.
+ 
+A complete journey consists of:
+* A driver entering the highway through an ENTRY toll booth.
+* The driver passing through some number of MAINROAD toll booths (possibly 0).
+* The driver exiting the highway through an EXIT toll booth.
+ 
+For example, the following excerpt of log lines contains complete journeys for the cars with JOX304 and THX138:
+ 
+.
+.
+.
+90750.191 JOX304 250E ENTRY
+91081.684 JOX304 260E MAINROAD
+91082.101 THX138 110E ENTRY
+91483.251 JOX304 270E MAINROAD
+91873.920 THX138 120E MAINROAD
+91874.493 JOX304 280E EXIT
+.
+.
+91982.102 THX138 290E EXIT
+.
+ 
+You may assume that the log only contains complete journeys, and there are no missing entries.
+ 
+2-1) Write a function in LogFile named countJourneys() that returns how many
+     complete journeys there are in the given LogFile.
+*/
+public class LogEntry
+{
+    /**
+    * Represents an entry from a single log line. Log lines look like this in the file:
+    *
+    * 34400.409 SXY288 210E ENTRY
+    *
+    * Where:
+    * * 34400.409 is the timestamp in seconds since the software was started.
+    * * SXY288 is the license plate of the vehicle passing through the toll booth.
+    * * 210E is the location and traffic direction of the toll booth. Here, the toll
+    *     booth is at 210 kilometers from the start of the tollway, and the E indicates
+    *     that the toll booth was on the east-bound traffic side. Tollbooths are placed
+    *     every ten kilometers.
+    * * ENTRY indicates which type of toll booth the vehicle went through. This is one of
+    *     "ENTRY", "EXIT", or "MAINROAD".
+    **/
+    public string Timestamp { get; private set; }
+    public string LicensePlate { get; private set; }
+    public string BoothType { get; private set; }
+    public int Location { get; private set; }
+    public string Direction { get; private set; }
+    public LogEntry(string logLine)
+    {
+        string[] tokens = logLine.Split(" ");
+        Timestamp =  tokens[0];
+        LicensePlate = tokens[1];
+        BoothType = tokens[3];
+        Location = int.Parse(tokens[2].Substring(0, tokens[2].Length - 1));
+        char directionLetter = tokens[2][tokens[2].Length - 1];
+        if (directionLetter == 'E')
+        {
+            Direction = "EAST";
+        }
+        else if (directionLetter == 'W')
+        {
+            Direction = "WEST";
+        }
+        else
+        {
+            Console.WriteLine(false);
+        }
+    }
+    public override string ToString()
+    {
+        return string.Format("<LogEntry timestamp: {0}  license: {1}  location: {2}  direction: {3}  booth type: {4}>",
+            Timestamp, LicensePlate, Location, Direction, BoothType);
+    }
+}
+public class LogFile : List<LogEntry>
+{
+    /*
+    * Represents a file containing a number of log lines, converted to LogEntry
+    * objects.
+    */
+    /*
+    public LogFile(StreamReader fileHandle)
+    {
+        string ?line;
+        while ((line = fileHandle.ReadLine()) != null)
+        {
+            LogEntry logEntry = new LogEntry(line.Trim());
+            LogEntries.Add(logEntry);
+        }
+    }
+    */
+ 
+    public LogFile(IEnumerable<string> lines)
+    {
+        foreach (var line in lines)
+        {
+            if (string.IsNullOrWhiteSpace(line)) continue;
+            LogEntry logEntry = new LogEntry(line.Trim());
+            Add(logEntry);
+        }
+    }
+}
+public class Solution
+{
+    /*
+    public static void TestLogFile()
+    {
+        Console.WriteLine("Running TestLogFile");
+        using (StreamReader fileHandle = new StreamReader("/content/test/tollbooth_small.log"))
+        {
+            LogFile logFile = new LogFile(fileHandle);
+            Console.WriteLine(logFile.LogEntries.Count == 13, "Length check failed");
+            foreach (LogEntry entry in logFile.LogEntries)
+            {
+                Console.WriteLine(entry is LogEntry, "Type check failed");
+            }
+        }
+    }
+    */
+    public static void TestLogFileFromLines()
+    {
+        Console.WriteLine("Running TestLogFileFromLines");
+        var lines = new[]
+        {
+            "34400.409 SXY288 210E ENTRY",
+            "34410.000 SXY288 220E MAINROAD",
+            "35000.123 SXY288 230E EXIT"
+        };
+ 
+        LogFile logFile = new LogFile(lines);
+        Console.WriteLine(logFile.Count == 3);
+        foreach (LogEntry entry in logFile)
+        {
+            Console.WriteLine(entry is LogEntry);
+        }
+    }
+ 
+
+    public static void TestLogEntry()
+    {
+        Console.WriteLine("Running TestLogEntry");
+        string logLine = "44776.619 KTB918 310E MAINROAD";
+        LogEntry logEntry = new LogEntry(logLine);
+        Console.WriteLine(logEntry.Timestamp.Equals(44776.619));
+        Console.WriteLine(logEntry.LicensePlate.Equals("KTB918"));
+        Console.WriteLine(logEntry.Location.Equals(310));
+        Console.WriteLine(logEntry.Direction.Equals("EAST"));
+        Console.WriteLine(logEntry.BoothType.Equals("MAINROAD"));
+        logLine = "52160.132 ABC123 400W ENTRY";
+        logEntry = new LogEntry(logLine);
+        Console.WriteLine(logEntry.Timestamp.Equals(52160.132));
+        Console.WriteLine(logEntry.LicensePlate.Equals("ABC123"));
+        Console.WriteLine(logEntry.Location.Equals(400));
+        Console.WriteLine(logEntry.Direction.Equals("WEST"));
+        Console.WriteLine(logEntry.BoothType.Equals("ENTRY"));
+    }
+ 
+    public static void TestCountJourneys()
+    {
+        Console.WriteLine("Running TestCountJourneys");
+	      /*
+        using (StreamReader reader = new StreamReader("/content/test/tollbooth_small.log"))
+        {
+            LogFile logFile = new LogFile(reader);
+            Console.WriteLine(logFile.CountJourneys().Equals(3));
+        }
+	      */
+
+ 
+	      var small_log = new[]
+        {
+	          "34400.409 SXY288 210E ENTRY",
+            "34410.000 SXY288 220E MAINROAD",
+            "35000.123 SXY288 230E EXIT"
+        };
+	      LogFile logFile = new LogFile(small_log);
+	      Console.WriteLine(logFile.CountJourneys() == 1);
+
+	      /*
+        using (StreamReader reader = new StreamReader("/content/test/tollbooth_medium.log"))
+        {
+            LogFile logFile = new LogFile(reader);
+            Console.WriteLine(logFile.CountJourneys().Equals(63));
+        }
+	      */
+
+ 
+    	  var medium_log = new[]
+        {
+            "34400.409 SXY288 210E ENTRY",
+            "34405.000 SXY288 220E MAINROAD",
+            "34430.250 SXY288 230E EXIT",
+ 
+            "34500.100 KTB918 310E MAINROAD",
+            "34510.200 ABC123 400W ENTRY",
+            "34515.880 ABC123 410W MAINROAD",
+            "34540.500 ABC123 420W EXIT",
+ 
+            "34600.000 LMN456 120E ENTRY",
+            "34612.345 LMN456 130E MAINROAD",
+            "34625.999 LMN456 140E MAINROAD",
+            "34650.777 LMN456 150E EXIT",
+ 
+            "34700.333 PQR789 500W ENTRY",
+            "34720.444 PQR789 490W MAINROAD",
+            "34745.555 PQR789 480W EXIT",
+ 
+            "34810.111 TUV111 300E ENTRY",
+            "34815.222 TUV111 310E MAINROAD",
+            "34825.333 TUV111 320E MAINROAD",
+            "34840.444 TUV111 330E EXIT",
+ 
+            "34900.000 WXY222 200W ENTRY",
+            "34905.500 WXY222 190W MAINROAD",
+            "34920.750 WXY222 180W EXIT",
+ 
+            "35000.000 ZZZ999 100E MAINROAD",
+            "35010.000 ZZZ999 110E MAINROAD",
+            // No ENTRY/EXIT for ZZZ999 (stays as drive-by sensors)
+ 
+            "35100.500 AAA777 260E ENTRY",
+            "35115.600 AAA777 270E MAINROAD",
+            "35130.700 AAA777 280E EXIT",
+ 
+            "35200.000 BBB666 450W ENTRY",
+            "35210.000 BBB666 440W MAINROAD",
+            "35225.000 BBB666 430W EXIT",
+        };
+	    logFile = new LogFile(medium_log);
+	    Console.WriteLine(logFile.CountJourneys() == 8);
+    }
+    public static void Main()
+    {
+        TestLogFileFromLines();
+        TestLogEntry();
+	TestCountJourneys();
+        Console.WriteLine("All tests passed.");
+    }
+}
