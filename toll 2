@@ -1,0 +1,23 @@
+public int CountJourneys()
+{
+    HashSet<string> inside = new HashSet<string>();
+    int count = 0;
+
+    foreach (var entry in this)
+    {
+        if (entry.BoothType == "ENTRY")
+        {
+            inside.Add(entry.LicensePlate);
+        }
+        else if (entry.BoothType == "EXIT")
+        {
+            if (inside.Contains(entry.LicensePlate))
+            {
+                count++;
+                inside.Remove(entry.LicensePlate);
+            }
+        }
+    }
+
+    return count;
+}
